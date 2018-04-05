@@ -26,6 +26,10 @@
 #include "..\Anti Debug\NtYieldExecution.h"
 #include "..\Anti Debug\SetHandleInformation_API.h"
 #include "..\Anti Debug\TLS_callbacks.h"
+#include "..\Anti Debug\NtQuerySystemInformation_SystemKernelDebuggerInformation.h"
+#include "..\Anti Debug\SharedUserData_KernelDebugger.h"
+#include "..\Anti Debug\ProcessJob.h"
+#include "..\Anti Debug\WriteWatch.h"
 
 /* Anti dumping headers */
 #include "..\Anti Dump\ErasePEHeaderFromMemory.h"
@@ -40,6 +44,7 @@
 #include "..\Anti VM\QEMU.h"
 #include "..\Anti VM\Xen.h"
 #include "..\Anti VM\Parallels.h"
+#include "..\Anti VM\Services.h"
 
 /* Code Injections Headers */
 #include "..\Code Injections\CreateRemoteThread.h"

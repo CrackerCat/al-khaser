@@ -10,6 +10,8 @@ VOID vmware_reg_key_value()
 		{ _T("HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0"), _T("Identifier"), _T("VMWARE") },
 		{ _T("HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 1\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0"), _T("Identifier"), _T("VMWARE") },
 		{ _T("HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 2\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0"), _T("Identifier"), _T("VMWARE") },
+		{ _T("SYSTEM\\ControlSet001\\Control\\SystemInformation"), _T("SystemManufacturer"), _T("VMWARE") },
+		{ _T("SYSTEM\\ControlSet001\\Control\\SystemInformation"), _T("SystemProductName"), _T("VMWARE") },
 	};
 
 	WORD dwLength = sizeof(szEntries) / sizeof(szEntries[0]);
@@ -61,6 +63,13 @@ VOID vmware_files()
 	TCHAR* szPaths[] = {
 		_T("system32\\drivers\\vmmouse.sys"),
 		_T("system32\\drivers\\vmhgfs.sys"),
+		_T("system32\\drivers\\vm3dmp.sys"),
+		_T("system32\\drivers\\vmci.sys"),
+		_T("system32\\drivers\\vmhgfs.sys"),
+		_T("system32\\drivers\\vmmemctl.sys"),
+		_T("system32\\drivers\\vmmouse.sys"),
+		_T("system32\\drivers\\vmrawdsk.sys"),
+		_T("system32\\drivers\\vmusbmouse.sys"),
 	};
 
 	/* Getting Windows Directory */
@@ -177,6 +186,8 @@ VOID vmware_processes()
 		_T("vmtoolsd.exe"),
 		_T("vmwaretray.exe"),
 		_T("vmwareuser.exe"),
+		_T("VGAuthService.exe"),
+		_T("vmacthlp.exe"),
 	};
 
 	WORD iLength = sizeof(szProcesses) / sizeof(szProcesses[0]);
@@ -190,3 +201,65 @@ VOID vmware_processes()
 			print_results(FALSE, msg);
 	}
 }
+
+/*
+Check for SMBIOS firmware
+*/
+BOOL vmware_firmware_SMBIOS()
+{
+	BOOL result = FALSE;
+	const DWORD Signature = static_cast<DWORD>('RSMB');
+
+	DWORD smbiosSize = 0;
+	PBYTE smbios = get_system_firmware(static_cast<DWORD>('RSMB'), 0x0000, &smbiosSize);
+	if (smbios != NULL)
+	{
+		PBYTE vmwareString = (PBYTE)"VMware";
+		size_t vmwwareStringLen = 6;
+
+		if (find_str_in_data(vmwareString, vmwwareStringLen, smbios, smbiosSize))
+		{
+			result = TRUE;
+		}
+
+		free(smbios);
+	}
+
+	return result;
+}
+
+/*
+Check for ACPI firmware
+*/
+BOOL vmware_firmware_ACPI()
+{
+	BOOL result = FALSE;
+
+	PDWORD tableNames = static_cast<PDWORD>(malloc(4096));
+	SecureZeroMemory(tableNames, 4096);
+	DWORD tableSize = EnumSystemFirmwareTables(static_cast<DWORD>('ACPI'), tableNames, 4096);
+	DWORD tableCount = tableSize / 4;
+	if (tableSize < 4 || tableCount == 0)
+		result = TRUE;
+	else
+	{
+		for (DWORD i = 0; i < tableCount; i++) {
+			DWORD tableSize = 0;
+			PBYTE table = get_system_firmware(static_cast<DWORD>('ACPI'), tableNames[i], &tableSize);
+
+			PBYTE vmwareString = (PBYTE)"VMWARE";
+			size_t vmwwareStringLen = 6;
+
+
+			if (find_str_in_data(vmwareString, vmwwareStringLen, table, tableSize)) {
+				result = TRUE;
+			}
+
+			free(table);
+		}
+	}
+
+	free(tableNames);
+	return result;
+}
+
